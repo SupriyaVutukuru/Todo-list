@@ -1,0 +1,8 @@
+<p>Hello <%= @user.name %>,</p>
+
+<p>This is a reminder for your task titled "<%= @task.title %>".</p>
+
+<p>Due Date: <%= @task.due_date.strftime("%B %d, %Y") %></p>
+<p>Notify Before: <%= @task.notify_before %> days</p>
+
+<p>Thank you!</p> 
