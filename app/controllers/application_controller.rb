@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::API
   before_action :authorize_request
+  before_action :set_workspace
 
   attr_reader :current_user
 
@@ -15,14 +16,22 @@ class ApplicationController < ActionController::API
 
   def authorize_request
     header = request.headers['Authorization']
-    header = header.split(' ').last if header
+    token = header.split(' ').last if header
     begin
-      @decoded = JsonWebToken.decode(header)
-      @current_user = User.find(@decoded[:user_id])
-    rescue ActiveRecord::RecordNotFound => e
-      render json: { errors: e.message }, status: :unauthorized
-    rescue JWT::DecodeError => e
-      render json: { errors: e.message }, status: :unauthorized
+      decoded = JWT.decode(token, ENV['DEV_SECRET_KEY'])[0]
+      @current_user = User.find(decoded['user_id'])
+    rescue ActiveRecord::RecordNotFound, JWT::DecodeError
+      render json: { errors: 'Invalid token' }, status: :unauthorized
     end
+  end
+
+  def set_workspace
+    workspace_name = request.headers['x-workspace']
+    @workspace = Workspace.find_by(name: workspace_name)
+    render json: { error: 'Workspace not found' }, status: :not_found unless @workspace
+  end
+
+  def current_user
+    @current_user
   end
 end

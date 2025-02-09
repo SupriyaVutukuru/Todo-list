@@ -2,6 +2,7 @@ class TasksController < ApplicationController
   before_action :set_workspace
   before_action :set_task, only: [:show, :update, :destroy]
   before_action :authorize_workspace_member
+  before_action :authorize_user, only: [:show, :update, :destroy]
 
   # GET /workspaces/:workspace_id/tasks
   def index
@@ -68,11 +69,20 @@ class TasksController < ApplicationController
 
   def authorize_workspace_member
     unless @workspace.users.include?(current_user)
+      Rails.logger.debug "Authorization failed: #{current_user.id} not in workspace #{@workspace.id}"
       render json: { errors: 'Not authorized' }, status: :forbidden
+    end
+  end
+
+
+  def authorize_user
+    unless @task.assignee == current_user
+      render json: { error: 'Unauthorized access' }, status: :forbidden
     end
   end
 
   def task_params
     params.require(:task).permit(:title, :description, :due_date, :notify_before, :priority, :category_id, :status, :assignee_id)
   end
-end 
+end
+
